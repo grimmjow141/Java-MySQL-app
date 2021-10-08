@@ -1,0 +1,4 @@
+- executabilul
+- formatul numarului de ordine sa fie: J[0-9]{1,2}/[0-9]{1..5}/[0-9]{4}
+- formatul emailului
+- de modificat functiile "verify_order_number" si "verify_EUID": anul sa fie cuprins intre 1900..2050

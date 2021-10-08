@@ -1,0 +1,139 @@
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.JCheckBox;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.SwingConstants;
+import java.awt.Font;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.swing.JButton;
+
+public class SearchByName {
+
+	private static JFrame frame;
+	private static JTextField label;
+	private static JTable table;
+	private static JScrollPane scrollPane;
+	private static Connection connection;
+
+	/**
+	 * Launch the application.
+	 */
+	
+	public static void connect_to_database (String url, String username, String password) {
+		
+		try {
+			//Class.forName("com.mysql.jc.jdbc.Driver");
+			connection = DriverManager.getConnection(url, username, password);
+		
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e);
+		}
+	}
+	
+	private static void populate_table (String... names) {
+		
+		String statement = "SELECT ";
+		for (String name: names) {
+			statement += "`";
+			statement += name;
+			statement += "`";
+			statement += ",";
+		}
+		
+		statement = statement.substring(0, statement.length() - 1);
+		statement += " FROM `societate`;";	
+		
+		System.out.println(statement);
+		
+		String[] columns = names;
+		String[][] data = new String[100][100];
+		
+		int i = 0;
+		int j = 0;
+		
+		try  (PreparedStatement stm = connection.prepareStatement(statement)) {
+			ResultSet results = stm.executeQuery(statement);
+			while (results.next()) {
+				for (String name : names) {
+					String value = results.getString(name);
+					data[i][j] = value;
+					j ++;
+				}
+				i ++;
+			}
+			
+			
+			for (int k=0;k<=1;k++) {
+				for (int t= 0; t <=2; t ++)
+					System.out.print(data[k][t] + " ");
+				System.out.println("\n");
+			}
+			
+			table = new JTable(data, names);
+			table.setFillsViewportHeight(true);
+			scrollPane.setViewportView(table);
+		  }	catch (SQLException e) {
+			JOptionPane.showMessageDialog(null, e.toString());
+		  	}
+
+	
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				
+				try {
+					SearchByName window = new SearchByName();
+					connect_to_database("jdbc:mysql://localhost:3306/my_database", "root", "bazededate2");
+					populate_table("id", "Nume", "C.A.E.N.");
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+	}
+
+	public SearchByName() {
+		initialize();
+	}
+
+	
+	private void initialize() {
+		frame = new JFrame();
+		frame.setVisible(true);
+		frame.setBounds(100, 100, 506, 300);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		
+		label = new JTextField();
+		label.setBounds(178, 30, 195, 34);
+		frame.getContentPane().add(label);
+		label.setColumns(10);
+		
+		scrollPane = new JScrollPane();
+		scrollPane.setBounds(6, 253, 480, -168);
+		frame.getContentPane().add(scrollPane);
+		
+		JLabel lblNewLabel = new JLabel("Caut\u0103 dup\u0103 nume: ");
+		lblNewLabel.setFont(new Font("SansSerif", Font.PLAIN, 15));
+		lblNewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		lblNewLabel.setBounds(37, 39, 129, 16);
+		frame.getContentPane().add(lblNewLabel);
+		
+		JButton btnCaut = new JButton("CAUT\u0102");
+		btnCaut.setFont(new Font("SansSerif", Font.PLAIN, 17));
+		btnCaut.setBounds(385, 33, 96, 28);
+		frame.getContentPane().add(btnCaut);
+	}
+}
+

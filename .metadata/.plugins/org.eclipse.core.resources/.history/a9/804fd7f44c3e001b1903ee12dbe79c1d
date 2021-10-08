@@ -1,0 +1,342 @@
+import java.awt.EventQueue;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.SwingConstants;
+import java.awt.Font;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.Color;
+import javax.swing.JCheckBox;
+import javax.swing.JPanel;
+import java.awt.GridBagLayout;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import java.awt.GridLayout;
+import javax.swing.JProgressBar;
+
+public class SearchByName implements ApplyThemeAndFont {
+
+	protected static JFrame frame;
+	protected static JTable table;
+	protected static JScrollPane scrollPane;
+	protected static JLabel label_1;
+	protected static JButton search_button;
+	protected static Connection connection;
+	protected static JTextField text_field;
+	protected static Field[] fields;
+	protected static ActionListener search_listener;
+	protected static JPanel panel;
+	protected static JLabel label_2_1, label_2_2, label_2_3, label_2_4, label_2_5, label_2_6;
+	protected static ColumnCheckBox box_1, box_2, box_3, box_4, box_5, box_6;
+	protected static BackButton back_button;
+	
+	public static Field[] getFields() {
+		return fields;
+	}
+
+	protected static void connect_to_database (String url, String username, String password) {
+		
+		try {
+			//Class.forName("com.mysql.jc.jdbc.Driver");
+			connection = DriverManager.getConnection(url, username, password);
+		
+		} catch (Exception e) {
+			connection = null;
+			JOptionPane.showMessageDialog(null, e);
+		}
+	}
+	
+	protected static void populate_table (String condition, Field... names) {
+		
+		Arrays.sort(names, new FieldComparator()); //sortam campurile din tabel: id primul, numele al doilea s.a.m.d.
+		
+		String[] column_names = new String[names.length];
+		int k = 0;
+		for (Field obj: names) {
+			String name = obj.getName();
+			column_names[k ++] = name;
+			//System.out.println(name);
+		}
+		
+		String statement = "SELECT ";
+		for (Field obj: names) {
+			String name = obj.getName();
+			if (name != "Platitor_TVA" && name != "C.U.I.") {
+				statement += "`";
+				statement += name;
+				statement += "`";
+				statement += ",";
+			}
+			if (name == "C.U.I.") { //vrem sa se afiseze C.U.I.-ul complet (cu RO)
+				statement += "IF (`Platitor_TVA` = 'DA', CONCAT('RO',`C.U.I`), `C.U.I`) AS `C.U.I.`";
+				statement += ",";
+			}
+		}
+		
+		statement = statement.substring(0, statement.length() - 1); //tai ultima virgula din propozitie
+		statement += " FROM `societate` ";	
+		
+		if (condition == null) 
+			statement += ";";
+		else {
+			statement += "HAVING ";
+			statement += condition;
+			statement += ";";
+		}
+		
+		//testare
+		//System.out.println(statement);
+		
+		String[][] data = new String[100][100];
+		
+		try  (PreparedStatement stm = connection.prepareStatement(statement)) {
+			ResultSet results = stm.executeQuery(statement);
+			if (results.next() == false)
+				JOptionPane.showMessageDialog(null, "C\u0103utarea nu a furnizat niciun rezultat..");
+			else {
+				int i = 0, j = 0;
+				
+				do {
+					j = 0;
+					for (/*String name : names*/Field field: names) {
+						String value = results.getString(field.getName());
+						data[i][j] = value;
+						j ++;
+					}
+					i ++;
+				} while (results.next());
+				
+				frame.remove(scrollPane);
+				
+				table = new JTable(data, column_names);
+				table.setEnabled(false);
+				table.setCellSelectionEnabled(true);
+				table.setFillsViewportHeight(true);
+				
+//				table.getColumnModel().getColumn(0).setPreferredWidth(8);
+//				table.getColumnModel().getColumn(2).setPreferredWidth(17);
+				
+				scrollPane = new JScrollPane(table);
+				scrollPane.setBounds(6,110,540,175);
+				frame.getContentPane().add(scrollPane);	
+			}
+
+		}	catch (SQLException e) {
+				JOptionPane.showMessageDialog(null, e.toString());
+		}
+	}
+	
+	public static void main(String[] args) {
+	
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					SearchByName window = new SearchByName();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+		});
+	}
+
+	public SearchByName() {
+	
+	}
+	
+	public SearchByName(boolean x) {
+		if (x)
+			initialize();
+	}
+
+	/**
+	 * @wbp.parser.entryPoint
+	 */
+	protected void initialize() {
+		
+		frame = new JFrame();
+		frame.setVisible(true);
+		frame.setResizable(false);
+		frame.setBounds(350, 225, 710, 367);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		
+		table = new JTable();
+		scrollPane = new JScrollPane(table);
+
+		frame.getContentPane().add(scrollPane);
+		
+		label_1 = new JLabel("Caut\u0103 dup\u0103 nume: ");
+		label_1.setFont(new Font("SansSerif", Font.PLAIN, 15));
+		label_1.setHorizontalAlignment(SwingConstants.CENTER);
+		label_1.setBounds(37, 39, 129, 16);
+		frame.getContentPane().add(label_1);
+		
+		search_button = new JButton("CAUT\u0102");
+		
+		search_listener = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String name = text_field.getText();
+				if (name.isBlank())
+					populate_table(null, fields);
+				else {
+					String condition = "`Nume` LIKE '%" + name + "%'";
+					populate_table(condition, fields);
+				}
+			}
+		};
+		
+		search_button.addActionListener(search_listener);
+	
+		search_button.setFont(new Font("SansSerif", Font.PLAIN, 17));
+		search_button.setBounds(594, 32, 96, 28);
+		frame.getContentPane().add(search_button);
+		
+		text_field = new JTextField();
+		text_field.setBounds(243, 34, 232, 28);
+		frame.getContentPane().add(text_field);
+		text_field.setColumns(10);
+		
+		fields = new Field[6];
+		
+		fields[0] = new Field("id");
+		fields[1] = new Field("Nume");
+		fields[2] = new Field("C.A.E.N.");
+		fields[3] = new Field("C.U.I.");
+		fields[4] = new Field("E.U.I.D.");
+		fields[5] = new Field("Nr. ordine");
+		
+		System.out.println(Field.getNr_of_fields());
+		
+		back_button = new BackButton();
+		back_button.setLocation(550, 32);
+		frame.getContentPane().add(back_button);
+		
+		panel = new JPanel();
+		panel.setBackground(Color.LIGHT_GRAY);
+		panel.setBounds(550, 72, 140, 250);
+		frame.getContentPane().add(panel);
+		panel.setLayout(new GridLayout(6, 2, 10, 0));
+		
+		label_2_1 = new JLabel("id");
+		label_2_1.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_1);
+		
+		box_1 = new ColumnCheckBox(fields[0], 134, 66);
+		box_1.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_1);
+		
+		label_2_2 = new JLabel("Nume");
+		label_2_2.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_2);
+		
+		box_2 = new ColumnCheckBox(fields[1], 192, 66);
+		box_2.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_2);
+		
+		label_2_3 = new JLabel("C.A.E.N.");
+		label_2_3.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_3);
+		
+		box_3 = new ColumnCheckBox(fields[2], 261, 66);
+		box_3.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_3);
+		
+		label_2_4 = new JLabel("C.U.I.");
+		label_2_4.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_4);
+		
+		box_4 = new ColumnCheckBox(fields[3], 315, 66);
+		box_4.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_4);
+		
+		label_2_5 = new JLabel("E.U.I.D.");
+		label_2_5.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_5);
+		
+		box_5 = new ColumnCheckBox(fields[4], 261, 66);
+		box_5.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_5);
+		
+		label_2_6 = new JLabel("Nr. ordine");
+		label_2_6.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(label_2_6);
+		
+		box_6 = new ColumnCheckBox(fields[5], 261, 66);
+		box_6.setHorizontalAlignment(SwingConstants.CENTER);
+		panel.add(box_6);
+		
+		connect_to_database("jdbc:mysql://localhost:3306/my_database", "root", "bazededate2");
+		populate_table(null, fields);
+		
+		Settings.read_settings_from_file("src/files/settings.txt");
+		apply_theme_and_font();
+		
+	}
+	
+	protected static Field[] remove_item_from_fields (Field item) {
+		int pos = -1;
+		for (int i = 0; i < fields.length; i ++)
+			if (fields[i].getName() == item.getName())
+				pos = i;
+		
+		for (int i = pos; i < fields.length - 1; i ++)
+			fields[i] = fields[i + 1];
+		
+		Field.setNr_of_fields(Field.getNr_of_fields() - 1);
+		
+		Field[] aux = new Field[Field.getNr_of_fields()];
+		
+		for (int i = 0; i < Field.getNr_of_fields(); i ++)
+			aux[i] = fields[i];
+		
+		return aux;
+	}
+	
+	protected static Field[] add_item_to_fields (Field item) {
+		
+		Field.setNr_of_fields(Field.getNr_of_fields() + 1);
+		Field[] aux = new Field[Field.getNr_of_fields()];
+		
+		for (int i = 0; i < Field.getNr_of_fields() - 1; i ++)
+			aux[i] = fields[i];
+		
+		aux[Field.getNr_of_fields() - 1] = item;
+		return aux;
+	}
+
+	@Override
+	public void apply_theme_and_font() {
+		if (!Settings.theme_state) {
+			frame.getContentPane().setBackground(new Color(20,20,20));
+			search_button.setForeground(new Color(150,150,150));
+			back_button.setForeground(new Color(150,150,150));
+		}
+		else {
+			frame.getContentPane().setBackground(new Color(255,255,255));
+			
+			search_button.setForeground(new Color(0,0,0));	
+			search_button.setBackground(new Color(238,238,238));
+			back_button.setForeground(new Color(0,0,0));	
+			back_button.setBackground(new Color(238,238,238));
+		
+		}
+	}
+
+
+}
+

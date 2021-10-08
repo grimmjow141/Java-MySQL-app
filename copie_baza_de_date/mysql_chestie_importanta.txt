@@ -1,0 +1,6 @@
+/*vreau sa afisez raporutul firmei cu numele = x */
+
+SELECT * FROM `societate/raport` 
+INNER JOIN (`societate`) ON `societate/raport`.societate = `societate`.id
+INNER JOIN (`raport`) on `societate/raport`.raport = `raport`.id 
+WHERE `Nume` = 'x';

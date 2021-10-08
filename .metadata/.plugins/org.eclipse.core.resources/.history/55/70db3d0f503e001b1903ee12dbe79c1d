@@ -1,0 +1,79 @@
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JCheckBox;
+import javax.swing.JOptionPane;
+
+public class ColumnCheckBox extends JCheckBox {
+	
+	private String column;
+	private ActionListener listener;
+	
+	public ColumnCheckBox(Field column) {
+		super("");
+		super.setSize(18, 18);
+		super.setSelected(true);
+		if (Settings.theme_state)
+			super.setBackground(Color.LIGHT_GRAY);
+		else
+			super.setBackground(Color.DARK_GRAY);
+		this.column = column.getName();
+		listener = new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (!isSelected()) {
+					if (/*SearchByName.fields_length > 1*/Field.getNr_of_fields() > 1) {
+						SearchByName.fields = SearchByName.remove_item_from_fields(column);
+						SearchByName.populate_table(null, SearchByName.fields);
+					}
+					else {
+						JOptionPane.showMessageDialog(null, "Nu puteți să deselectați toate câmpurile..");
+						setSelected(true);
+					}
+				}
+				else {
+					SearchByName.fields = SearchByName.add_item_to_fields(column);
+					SearchByName.populate_table(null, SearchByName.fields);
+				}
+			}
+		};
+		super.addActionListener(listener);
+	}
+
+	public ColumnCheckBox(Field column, int x, int y) {
+		super("");
+		super.setSize(18, 18);
+		super.setSelected(true);
+		super.setBackground(new Color(192, 192, 192));
+		this.column = column.getName();
+		super.setLocation(x, y);
+		
+		listener = new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if (!isSelected()) {
+					if (Field.getNr_of_fields() > 1) {
+						SearchByName.fields = SearchByName.remove_item_from_fields(column);
+						SearchByName.populate_table(null, SearchByName.fields);
+					}
+					else {
+						JOptionPane.showMessageDialog(null, "Nu puteți să deselectați toate câmpurile..");
+						setSelected(true);
+					}
+				}
+				else {
+					SearchByName.fields = SearchByName.add_item_to_fields(column);
+					SearchByName.populate_table(null, SearchByName.fields);
+				}
+//				testare
+//				System.out.println("Nr of fields: " + Field.getNr_of_fields());
+			}
+		};
+		super.addActionListener(listener);
+	}
+
+}

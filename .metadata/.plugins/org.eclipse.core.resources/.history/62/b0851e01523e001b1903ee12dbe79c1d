@@ -1,0 +1,145 @@
+import java.awt.EventQueue;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+import com.mysql.cj.xdevapi.PreparableStatement;
+
+import javax.swing.JButton;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.awt.event.ActionEvent;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Scanner;
+
+public class StartWindow implements ApplyThemeAndFont{
+
+	private static JFrame frame;
+	private static JButton button_1;
+	private static JButton button_2;
+	private static JButton button_3;
+	private static JButton button_4;
+	private static JButton button_5;
+	
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					StartWindow window = new StartWindow();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	public StartWindow() {
+		initialize();
+	}
+
+	private void initialize() {
+		
+		frame = new JFrame();
+		frame.setBounds(540, 260, 450, 300);
+		frame.setResizable(false);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		frame.setVisible(true);
+		
+		button_2 = new JButton("Caut\u0103 dup\u0103 C.U.I. ");
+		button_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				frame.dispose();
+				new SearchByCUI();
+			}
+		});
+		button_2.setBounds(254, 94, 172, 21);
+		frame.getContentPane().add(button_2);
+		
+		button_3 = new JButton("Adaug\u0103 / sterge societate");
+		button_3.setBounds(254, 131, 172, 21);
+		frame.getContentPane().add(button_3);
+		
+		button_3.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				frame.dispose();
+				new AddOrDeleteSociety();
+			}
+		});
+		
+		button_1 = new JButton("Caut\u0103 dup\u0103 nume");
+		button_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				frame.dispose();
+				SearchByName new_window = new SearchByName(true);
+			}
+		});
+		button_1.setBounds(254, 57, 172, 21);
+		frame.getContentPane().add(button_1);
+		
+		button_4 = new JButton("Editare societate");
+		button_4.setBounds(254, 168, 172, 21);
+		frame.getContentPane().add(button_4);
+		
+		button_5 = new JButton("Set\u0103ri");
+		button_5.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				frame.dispose();
+				new Settings();
+			}
+		});
+		button_5.setBounds(254, 209, 172, 21);
+		frame.getContentPane().add(button_5);
+		
+		//reinitalizam fields cand intram in meniul principal pt a nu avea duplicate
+		SearchByName.fields = null;
+		SearchByCUI.fields = null;
+		Field.setNr_of_fields(0);
+		
+		Settings.read_settings_from_file("src/files/settings.txt");
+		apply_theme_and_font();
+	}
+
+	public void apply_theme_and_font() {
+		if (!Settings.theme_state) {
+			frame.getContentPane().setBackground(new Color(20,20,20));
+			button_1.setForeground(new Color(150,150,150));
+			button_2.setForeground(new Color(150,150,150));
+			button_3.setForeground(new Color(150,150,150));
+			button_4.setForeground(new Color(150,150,150));
+			button_5.setForeground(new Color(150,150,150));
+			
+			button_1.setBackground(new Color(50,50,50));
+			button_2.setBackground(new Color(50,50,50));
+			button_3.setBackground(new Color(50,50,50));
+			button_4.setBackground(new Color(50,50,50));
+			button_5.setBackground(new Color(50,50,50));
+		}
+		else {
+			frame.getContentPane().setBackground(new Color(255,255,255));
+			
+			button_1.setForeground(new Color(0,0,0));
+			button_2.setForeground(new Color(0,0,0));
+			button_3.setForeground(new Color(0,0,0));
+			button_4.setForeground(new Color(0,0,0));
+			button_5.setForeground(new Color(0,0,0));
+			
+			button_1.setBackground(new Color(238,238,238));
+			button_2.setBackground(new Color(238,238,238));
+			button_3.setBackground(new Color(238,238,238));
+			button_4.setBackground(new Color(238,238,238));
+			button_5.setBackground(new Color(238,238,238));
+		}
+	}
+
+	
+}
